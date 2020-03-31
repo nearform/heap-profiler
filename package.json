@@ -1,0 +1,54 @@
+{
+  "name": "@nearform/heap-profiler",
+  "version": "0.1.0",
+  "description": "Heap dump and sample profiler generator for Node.",
+  "author": "NearForm Ltd",
+  "homepage": "https://github.com/nearform/heap-profiler",
+  "contributors": [
+    {
+      "name": "Paolo Insogna",
+      "url": "https://github.com/ShogunPanda"
+    }
+  ],
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "keywords": [
+    "heap",
+    "profile",
+    "sampling",
+    "snapshot"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nearform/heap-profiler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nearform/heap-profiler/issues"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "prepublishOnly": "npm run ci",
+    "postpublish": "git push origin && git push origin -f --tags",
+    "lint": "eslint src/**/*.js test/**/*.js",
+    "test": "tap --reporter=spec --coverage-report=html --coverage-report=text --no-browser test/*.spec.js",
+    "ci": "npm run lint && tap --no-color --reporter=spec --coverage-report=json --coverage-report=text test/*.spec.js"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.20.0",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "prettier": "^1.19.1",
+    "tap": "^14.10.7"
+  },
+  "engines": {
+    "node": ">= 12.0.0"
+  }
+}
