@@ -16,7 +16,7 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
   // Prepare the context
   const { interval, duration } = Object.assign({ interval: defaultInterval, duration: defaultDuration }, options || {})
   const [callback, promise] = ensurePromiseCallback(cb)
-  const destination = destinationFile('heapsnapshot')
+  const destination = destinationFile('heapprofile')
   const session = new Session()
   let fd
 
