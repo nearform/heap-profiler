@@ -33,9 +33,15 @@ kill -USR2 $PID
 The preloader uses the following environment variables to control its behavior:
 
 - `HEAP_PROFILER_SNAPSHOT`: If set to `false`, it will not generate heap dump snapshots.
+
+- `HEAP_PROFILER_SNAPSHOT_DESTINATION`: The path where to store the snapshot. The default will be a `.heapsnapshot` in the current directory.
+
 - `HEAP_PROFILER_PROFILE`: If set to `false`, it will not generate heap sampling profile.
-- `HEAP_PROFILER_INTERVAL`: Heap sampling profile interval, in bytes. Default is `32768` (32KB).
-- `HEAP_PROFILER_DURAITON`: Heap sampling profile in milliseconds. Default is `10000` (10 seconds).
+
+- `HEAP_PROFILER_PROFILE_DESTINATION`: The path where to store the profile. The default will be a `.heapprofile` in the current directory.
+- `HEAP_PROFILER_PROFILE_INTERVAL`: Heap sampling profile interval, in bytes. Default is `32768` (32KB).
+
+- `HEAP_PROFILER_PROFILE_DURAITON`: Heap sampling profile in milliseconds. Default is `10000` (10 seconds).
 
 ## API
 
@@ -45,10 +51,21 @@ The promise resolved value (or the callback argument) will be the generated file
 
 The available functions are:
 
-- `generateHeapSnapshot([callback])`: Generates a heap dump.
+- `generateHeapSnapshot([options], [callback])`: Generates a heap dump
+
+  - `destination`: The path where to store the snapshot. The default will be a `.heapsnapshot` in the current directory.
+
 - `generateHeapSamplingProfile([options], [callback])`: Generates a heap sampling profiler. The valid options are:
+
+  - `destination`: The path where to store the profile. The default will be a `.heapprofile` in the current directory.
   - `interval`: Sample interval, in bytes. Default is `32768` (32KB).
   - `duration`: Sample duration, in milliseconds. Default is `10000` (10 seconds).
+
+## Performance impact
+
+Generating a heap dump snapshot is handled synchronously by Node and therefore **will block your process completely**.
+
+Generating a heap sampling profile is instead asynchronous and lightweight. Our test showed that the **performance decrease is around 10%**.
 
 ## Contributing
 
