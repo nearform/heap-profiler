@@ -16,6 +16,7 @@ module.exports = function generateHeapSnapshot(options, cb) {
   const { destination } = Object.assign({ destination: destinationFile('heapsnapshot') }, options)
   const session = new Session()
   let error = null
+  let handled = false
 
   if (typeof destination !== 'string' || destination.length === 0) {
     throw new Error('The destination option must be a non empty string')
@@ -24,10 +25,22 @@ module.exports = function generateHeapSnapshot(options, cb) {
   const writer = new SonicBoom({ dest: destination })
 
   writer.on('error', err => {
+    /* istanbul ignore if */
+    if (handled) {
+      return
+    }
+
+    handled = true
     callback(err)
   })
 
   writer.on('close', () => {
+    /* istanbul ignore if */
+    if (handled) {
+      return
+    }
+
+    handled = true
     callback(error, destination)
   })
 
