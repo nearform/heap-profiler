@@ -2,7 +2,7 @@
 
 [![Package Version](https://img.shields.io/npm/v/@nearform/heap-profiler.svg)](https://npm.im/@nearform/heap-profiler)
 [![Dependency Status](https://img.shields.io/david/nearform/heap-profiler)](https://david-dm.org/nearform/heap-profiler)
-[![Build Status](https://img.shields.io/github/workflow/status/nearform/heap-profiler/workflows/CI/badge.svg)](https://github.com/nearform/heap-profiler/actions?query=workflow%3ACI)
+[![Build Status](https://img.shields.io/github/workflow/status/nearform/heap-profiler/CI)](https://github.com/nearform/heap-profiler/actions?query=workflow%3ACI)
 
 Heap dump and sample profiler generator for Node.
 
