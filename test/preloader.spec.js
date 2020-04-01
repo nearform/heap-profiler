@@ -30,6 +30,14 @@ function cleanEnvironment() {
   logger.error.resetHistory()
 }
 
+async function waitForReport(spy, calls, timeout) {
+  const startTime = process.hrtime.bigint()
+
+  while (spy.callCount < calls && Number(process.hrtime.bigint() - startTime) / 1e9 < timeout) {
+    await sleep(100)
+  }
+}
+
 t.test('it correctly generates reports when receiving USR2 and only once at time', async t => {
   cleanEnvironment()
   const snapshotDestination = await tmpName()
@@ -45,8 +53,8 @@ t.test('it correctly generates reports when receiving USR2 and only once at time
   process.kill(process.pid, 'SIGUSR2')
   process.kill(process.pid, 'SIGUSR2')
 
-  // Give generators time to finish
-  await sleep(5000)
+  // Wait for generators time to finish
+  await waitForReport(logger.info, 5, 10)
 
   // Check the reports were only invoked once
   t.equal(logger.info.callCount, 5)
@@ -82,8 +90,8 @@ t.test('it correctly exclude reports based on environment variables', async t =>
   // Set the signal twices
   process.kill(process.pid, 'SIGUSR2')
 
-  // Give generators time to finish
-  await sleep(100)
+  // Wait for generators time to finish
+  await waitForReport(logger.info, 2, 10)
 
   // Check the reports were never invoked
   t.equal(logger.info.callCount, 2)
@@ -107,8 +115,8 @@ t.test('it correctly logs generation errors', async t => {
   // Set the signal twices
   process.kill(process.pid, 'SIGUSR2')
 
-  // Give generators time to finish
-  await sleep(5000)
+  // Wait for generators time to finish
+  await waitForReport(logger.error, 1, 10)
 
   // Check the reports were not generated
   t.equal(logger.info.callCount, 1)

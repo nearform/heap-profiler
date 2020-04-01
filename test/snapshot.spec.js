@@ -19,14 +19,20 @@ t.test('it correctly generates a snapshot using promises', async t => {
   cleanup()
 })
 
-t.test('it correctly generates a snapshot using callbacks', t => {
-  tmpFile().then(({ path: destination, cleanup }) => {
-    generateHeapSnapshot({ destination }, () => {
-      const generated = JSON.parse(readFileSync(destination, 'utf-8'))
-      cleanup()
+t.test('it correctly generates a snapshot using callbacks', async t => {
+  const { path: destination, cleanup } = await tmpFile()
 
-      t.true(validate(generated))
-      t.end()
+  return new Promise((resolve, reject) => {
+    generateHeapSnapshot({ destination }, () => {
+      try {
+        const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+        cleanup()
+
+        t.true(validate(generated))
+        resolve()
+      } catch (e) {
+        reject(e)
+      }
     })
   })
 })

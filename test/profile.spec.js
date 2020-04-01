@@ -20,19 +20,26 @@ t.test('it correctly generates a profile using promises', async t => {
   cleanup()
 })
 
-t.test('it correctly generates a profile using callbacks', t => {
-  Promise.all([
-    allocateMemoryFor(100),
-    tmpFile().then(({ path: destination, cleanup }) => {
-      generateHeapSamplingProfile({ destination, duration: 100 }, () => {
+t.test('it correctly generates a profile using callbacks', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+
+  const test = new Promise((resolve, reject) => {
+    generateHeapSamplingProfile({ destination, duration: 100 }, () => {
+      try {
         const generated = JSON.parse(readFileSync(destination, 'utf-8'))
         cleanup()
 
         t.true(validate(generated))
-        t.end()
-      })
+        resolve()
+      } catch (e) {
+        reject(e)
+      }
     })
-  ])
+  })
+
+  await allocateMemoryFor(100)
+
+  return test
 })
 
 t.test('it handles file saving errors using promises', async t => {
