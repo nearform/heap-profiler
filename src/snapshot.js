@@ -1,23 +1,48 @@
 'use strict'
 
 const { Session } = require('inspector')
-const { openSync, closeSync, writeSync } = require('fs')
+const SonicBoom = require('sonic-boom')
 const { ensurePromiseCallback, destinationFile } = require('./utils')
 
-module.exports = function generateHeapSnapshot(cb) {
+module.exports = function generateHeapSnapshot(options, cb) {
+  /* istanbul ignore if */
+  if (typeof options === 'function') {
+    cb = options
+    options = null
+  }
+
   // Prepare the context
   const [callback, promise] = ensurePromiseCallback(cb)
-  const destination = destinationFile('heapsnapshot')
+  const { destination } = Object.assign({ destination: destinationFile('heapsnapshot') }, options)
   const session = new Session()
-  let fd
-  let writeError
+  let error = null
+  let handled = false
 
-  // Open the destination file
-  try {
-    fd = openSync(destination, 'w')
-  } catch (e) {
-    return callback(e)
+  if (typeof destination !== 'string' || destination.length === 0) {
+    throw new Error('The destination option must be a non empty string')
   }
+
+  const writer = new SonicBoom({ dest: destination })
+
+  writer.on('error', err => {
+    /* istanbul ignore if */
+    if (handled) {
+      return
+    }
+
+    handled = true
+    callback(err)
+  })
+
+  writer.on('close', () => {
+    /* istanbul ignore if */
+    if (handled) {
+      return
+    }
+
+    handled = true
+    callback(error, destination)
+  })
 
   // Start the session
   session.connect()
@@ -25,33 +50,29 @@ module.exports = function generateHeapSnapshot(cb) {
   // Prepare chunk appending
   session.on('HeapProfiler.addHeapSnapshotChunk', m => {
     // A write failed, discard all the rest
-    if (writeError) {
+    /* istanbul ignore if */
+    if (error) {
       return
     }
 
     try {
-      writeSync(fd, m.params.chunk)
+      writer.write(m.params.chunk)
     } catch (e) {
-      writeError = e
+      /* istanbul ignore next */
+      error = e
     }
   })
 
   // Request heap snapshot
   session.post('HeapProfiler.takeHeapSnapshot', null, (err, r) => {
-    if (writeError || err) {
-      return callback(writeError || err)
+    /* istanbul ignore next */
+    if (err && !error) {
+      error = err
     }
 
     // Cleanup
     session.disconnect()
-
-    try {
-      closeSync(fd)
-    } catch (e) {
-      // No-op
-    }
-
-    callback(null, destination)
+    writer.end()
   })
 
   return promise

@@ -1,24 +1,30 @@
 'use strict'
 
 const { Session } = require('inspector')
-const { openSync, closeSync, writeSync } = require('fs')
+const { writeFile } = require('fs')
 const { ensurePromiseCallback, destinationFile } = require('./utils')
 
 const defaultInterval = 32768
 const defaultDuration = 10000
 
 module.exports = function generateHeapSamplingProfile(options, cb) {
+  /* istanbul ignore if */
   if (typeof options === 'function') {
     cb = options
-    options = {}
+    options = null
   }
 
   // Prepare the context
-  const { interval, duration } = Object.assign({ interval: defaultInterval, duration: defaultDuration }, options || {})
+  const { interval, duration, destination } = Object.assign(
+    { interval: defaultInterval, duration: defaultDuration, destination: destinationFile('heapprofile') },
+    options
+  )
   const [callback, promise] = ensurePromiseCallback(cb)
-  const destination = destinationFile('heapprofile')
   const session = new Session()
-  let fd
+
+  if (typeof destination !== 'string' || destination.length === 0) {
+    throw new Error('The destination option must be a non empty string')
+  }
 
   if (typeof duration !== 'number' || isNaN(duration) || duration < 0) {
     throw new Error('The duration option must be a number greater than 0')
@@ -28,47 +34,32 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
     throw new Error('The interval option must be a number greater than 0')
   }
 
-  // Open the destination file
-  try {
-    fd = openSync(destination, 'w')
-  } catch (e) {
-    return callback(e)
-  }
-
   // Start the session
   session.connect()
 
   // Request profile
-  session.post('HeapProfiler.startSampling', interval, err => {
+  session.post('HeapProfiler.startSampling', { samplingInterval: interval }, err => {
+    /* istanbul ignore if */
     if (err) {
       return callback(err)
     }
 
     setTimeout(() => {
       session.post('HeapProfiler.stopSampling', (err, profile) => {
+        /* istanbul ignore if */
         if (err) {
           return callback(err)
         }
 
-        // Write file
-        let writeError
-
-        try {
-          writeSync(fd, JSON.stringify(profile.profile))
-        } catch (err) {
-          writeError = err
-        }
-
-        // Cleanup
         session.disconnect()
 
-        try {
-          closeSync(fd)
-        } catch (e) {
-          // No-op
-        }
+        writeFile(destination, JSON.stringify(profile.profile), 'utf-8', err => {
+          if (err) {
+            return callback(err)
+          }
 
-        callback(writeError, destination)
+          callback(null, destination)
+        })
       })
     }, duration)
   })

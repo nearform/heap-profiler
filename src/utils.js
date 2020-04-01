@@ -3,7 +3,7 @@
 const { join } = require('path')
 
 function ensurePromiseCallback(cb) {
-  if (typeof callback === 'function') {
+  if (typeof cb === 'function') {
     return [cb]
   }
 
