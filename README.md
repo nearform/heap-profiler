@@ -36,6 +36,8 @@ The preloader uses the following environment variables to control its behavior:
 
 - `HEAP_PROFILER_SNAPSHOT_DESTINATION`: The path where to store the snapshot. The default will be a `.heapsnapshot` in the current directory.
 
+- `HEAP_PROFILER_SNAPSHOT_RUN_GC`: If to run the garbage collector before taking the snapshot. The default is `false` and it is ignored if the process is not started with the `--expose-gc` flag.
+
 - `HEAP_PROFILER_PROFILE`: If set to `false`, it will not generate heap sampling profile.
 
 - `HEAP_PROFILER_PROFILE_DESTINATION`: The path where to store the profile. The default will be a `.heapprofile` in the current directory.
@@ -54,6 +56,7 @@ The available functions are:
 - `generateHeapSnapshot([options], [callback])`: Generates a heap dump
 
   - `destination`: The path where to store the snapshot. The default will be a `.heapsnapshot` in the current directory.
+  - `runGC`: If to run the garbage collector before taking the snapshot. The default is `false` and it is ignored if the process is not started with the `--expose-gc` flag.
 
 - `generateHeapSamplingProfile([options], [callback])`: Generates a heap sampling profiler. The valid options are:
 

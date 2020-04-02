@@ -3,6 +3,7 @@
 const t = require('tap')
 const { readFileSync } = require('fs')
 const { file: tmpFile } = require('tmp-promise')
+const { stub } = require('sinon')
 
 const generateHeapSnapshot = require('../src/snapshot')
 const validate = require('./fixtures/snapshotSchema')
@@ -35,6 +36,40 @@ t.test('it correctly generates a snapshot using callbacks', async t => {
       }
     })
   })
+})
+
+t.test('it runs the garbage collector if requested to', async t => {
+  const gcStub = stub(global, 'gc')
+
+  const { path: destination, cleanup } = await tmpFile()
+
+  await generateHeapSnapshot({ destination, runGC: true })
+
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.true(validate(generated))
+  t.equal(gcStub.callCount, 1)
+  cleanup()
+
+  gcStub.restore()
+})
+
+t.test('it handles garbage collector errors', async t => {
+  const gcStub = stub(global, 'gc')
+  gcStub.onFirstCall().throws(new Error('FAILED'))
+  const { path: destination, cleanup } = await tmpFile()
+
+  try {
+    await generateHeapSnapshot({ destination, runGC: true })
+    t.fail('DID NOT THROW')
+  } catch (e) {
+    t.equal(e.message, 'FAILED')
+  }
+
+  t.equal(gcStub.callCount, 1)
+  cleanup()
+
+  gcStub.restore()
 })
 
 t.test('it handles file saving errors using promises', async t => {

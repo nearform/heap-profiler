@@ -34,6 +34,10 @@ module.exports = function installPreloader(logger) {
       snapshotOptions.destination = process.env.HEAP_PROFILER_SNAPSHOT_DESTINATION
     }
 
+    if ('HEAP_PROFILER_SNAPSHOT_RUN_GC' in process.env) {
+      profilerOptions.runGC = process.env.HEAP_PROFILER_SNAPSHOT_RUN_GC === 'true'
+    }
+
     if ('HEAP_PROFILER_PROFILE_DESTINATION' in process.env) {
       profilerOptions.destination = process.env.HEAP_PROFILER_PROFILE_DESTINATION
     }
