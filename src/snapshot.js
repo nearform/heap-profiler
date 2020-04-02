@@ -13,7 +13,7 @@ module.exports = function generateHeapSnapshot(options, cb) {
 
   // Prepare the context
   const [callback, promise] = ensurePromiseCallback(cb)
-  const { destination } = Object.assign({ destination: destinationFile('heapsnapshot') }, options)
+  const { destination, runGC } = Object.assign({ destination: destinationFile('heapsnapshot'), runGC: false }, options)
   const session = new Session()
   let error = null
   let handled = false
@@ -43,6 +43,16 @@ module.exports = function generateHeapSnapshot(options, cb) {
     handled = true
     callback(error, destination)
   })
+
+  if (runGC && typeof global.gc === 'function') {
+    try {
+      global.gc()
+    } catch (e) {
+      error = e
+      writer.end()
+      return promise
+    }
+  }
 
   // Start the session
   session.connect()

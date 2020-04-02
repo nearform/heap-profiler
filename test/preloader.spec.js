@@ -17,6 +17,7 @@ require('../src/preloader')(logger)
 function cleanEnvironment() {
   for (const key of [
     'HEAP_PROFILER_SNAPSHOT',
+    'HEAP_PROFILER_SNAPSHOT_RUN_GC',
     'HEAP_PROFILER_DESTINATION',
     'HEAP_PROFILER_SNAPSHOT_DESTINATION',
     'HEAP_PROFILER_PROFILE_DESTINATION',
@@ -45,6 +46,7 @@ t.test('it correctly generates reports when receiving USR2 and only once at time
 
   // Set preloader variables
   process.env.HEAP_PROFILER_SNAPSHOT_DESTINATION = snapshotDestination
+  process.env.HEAP_PROFILER_SNAPSHOT_RUN_GC = 'true'
   process.env.HEAP_PROFILER_PROFILE_DESTINATION = profileDestination
   process.env.HEAP_PROFILER_PROFILE_DURATION = 10
   process.env.HEAP_PROFILER_PROFILE_INTERVAL = 32768
