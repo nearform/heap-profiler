@@ -1,13 +1,17 @@
 {
   "name": "@nearform/heap-profiler",
   "version": "0.4.0",
-  "description": "Heap dump and sample profiler generator for Node.",
+  "description": "Heap dump, sample profiler and allocation timeline generator for Node.",
   "author": "NearForm Ltd",
   "homepage": "https://github.com/nearform/heap-profiler",
   "contributors": [
     {
       "name": "Paolo Insogna",
       "url": "https://github.com/ShogunPanda"
+    },
+    {
+      "name": "Damien Simonin Feugas",
+      "url": "https://github.com/feugy"
     }
   ],
   "license": "Apache-2.0",
@@ -21,7 +25,9 @@
     "heap",
     "profile",
     "sampling",
-    "snapshot"
+    "snapshot",
+    "allocation",
+    "timeline"
   ],
   "repository": {
     "type": "git",
@@ -36,7 +42,7 @@
     "postpublish": "git push origin && git push origin -f --tags",
     "lint": "eslint src/**/*.js test/**/*.js",
     "test": "tap --gc --reporter=spec --coverage-report=html --coverage-report=text --no-browser test/*.spec.js",
-    "ci": "npm run lint && tap --gc --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 test/*.spec.js"
+    "ci": "npm run lint && tap --gc --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 --timeout 45 test/*.spec.js"
   },
   "dependencies": {
     "sonic-boom": "^1.0.1"

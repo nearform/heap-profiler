@@ -15,8 +15,8 @@ t.test('it correctly generates a snapshot using promises', async t => {
 
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.true(validate(generated))
-
+  validate(generated)
+  t.strictSame(validate.errors, null)
   cleanup()
 })
 
@@ -29,7 +29,8 @@ t.test('it correctly generates a snapshot using callbacks', async t => {
         const generated = JSON.parse(readFileSync(destination, 'utf-8'))
         cleanup()
 
-        t.true(validate(generated))
+        validate(generated)
+        t.strictSame(validate.errors, null)
         resolve()
       } catch (e) {
         reject(e)
@@ -47,7 +48,8 @@ t.test('it runs the garbage collector if requested to', async t => {
 
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.true(validate(generated))
+  validate(generated)
+  t.strictSame(validate.errors, null)
   t.equal(gcStub.callCount, 1)
   cleanup()
 

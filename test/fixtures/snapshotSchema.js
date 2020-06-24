@@ -96,7 +96,7 @@ const snapshot = {
     },
     trace_tree: {
       type: 'array',
-      items: { type: 'number' }
+      items: { type: ['number', 'array'] }
     },
     samples: {
       type: 'array',
