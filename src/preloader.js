@@ -9,13 +9,13 @@ async function benchmarkGeneration(logger, type, report, options) {
   const file = await report(options)
   const end = Number(process.hrtime.bigint() - start)
 
-  logger.info(`[@nearform/heap-profile]     Generated heap ${type} file ${file} in ${end / 1e6} ms`)
+  logger.info(`[@nearform/heap-profiler]     Generated heap ${type} file ${file} in ${end / 1e6} ms`)
   return file
 }
 
 module.exports = function installPreloader(logger) {
   function runTools() {
-    logger.info('[@nearform/heap-profile] Received SIGUSR2. Generating heap reports ...')
+    logger.info('[@nearform/heap-profiler] Received SIGUSR2. Generating heap reports ...')
 
     const takeSnapshot = process.env.HEAP_PROFILER_SNAPSHOT !== 'false'
     const takeProfile = process.env.HEAP_PROFILER_PROFILE !== 'false'
@@ -66,24 +66,24 @@ module.exports = function installPreloader(logger) {
     if (recordTimeline) {
       promises.push(benchmarkGeneration(logger, 'allocation timeline', async options => {
         const stop = await recordAllocationTimeline(options)
-        logger.info('[@nearform/heap-profile] Allocation timeline started. Awaiting SIGUSR2 to stop ...')
+        logger.info('[@nearform/heap-profiler] Allocation timeline started. Awaiting SIGUSR2 to stop ...')
         return new Promise((resolve, reject) => process.once('SIGUSR2', () => stop().then(resolve).catch(reject)))
       }, timelineOptions))
     }
 
     Promise.all(promises)
       .then(() => {
-        logger.info('[@nearform/heap-profile] Generation completed.')
+        logger.info('[@nearform/heap-profiler] Generation completed.')
         // resume awaiting on the next start signal
         process.once('SIGUSR2', runTools)
       })
       .catch(e => {
-        logger.error('[@nearform/heap-profile] Generation failed.', e)
+        logger.error('[@nearform/heap-profiler] Generation failed.', e)
         // stops itslef
         process.kill(process.pid, 'SIGUSR2')
       })
   }
 
   process.once('SIGUSR2', runTools)
-  logger.info(`[@nearform/heap-profile] Listening for SIGUSR2 signal on process ${process.pid}.`)
+  logger.info(`[@nearform/heap-profiler] Listening for SIGUSR2 signal on process ${process.pid}.`)
 }

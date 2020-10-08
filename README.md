@@ -56,6 +56,8 @@ The preloader uses the following environment variables to control its behavior:
 
 - `HEAP_PROFILER_TIMELINE_RUN_GC`: Whether or not running Garbage Collector before and after the allocation timeline, to see only remaining objects (default to false).
 
+- `HEAP_PROFILER_LOGGING_DISABLED`: Whether or not disable logging
+
 ## API
 
 All module functions can be used with promises and by providing a callback as last option.
