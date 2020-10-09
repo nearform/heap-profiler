@@ -109,17 +109,13 @@ t.test('it handles garbage collector error when stopping recording', async t => 
 })
 
 t.test('it handles file saving errors using promises', async t => {
-  const stop = await recordAllocationTimeline({ destination: '/this/doesnt/exists' })
-  await t.rejects(stop, {
+  await t.rejects(recordAllocationTimeline({ destination: '/this/doesnt/exists' }), {
     message: "ENOENT: no such file or directory, open '/this/doesnt/exists'"
   })
 })
 
 t.test('it handles file saving errors using callbacks', t => {
-  const stop = recordAllocationTimeline({ destination: '/this/doesnt/exists' }, err => {
-    t.fail(err)
-  })
-  stop(err => {
+  recordAllocationTimeline({ destination: '/this/doesnt/exists' }, err => {
     t.equal(err.message, "ENOENT: no such file or directory, open '/this/doesnt/exists'")
     t.end()
   })

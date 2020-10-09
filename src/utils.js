@@ -1,5 +1,6 @@
 'use strict'
 
+const { open, close } = require('fs')
 const { join } = require('path')
 
 function ensurePromiseCallback(cb) {
@@ -30,4 +31,14 @@ function destinationFile(ext) {
   return join(process.cwd(), `profile-${process.pid}-${Date.now()}.${ext}`)
 }
 
-module.exports = { ensurePromiseCallback, destinationFile }
+function validateDestinationFile(file, cb) {
+  open(file, 'w', (err, fd) => {
+    if (err) {
+      return cb(err)
+    }
+
+    close(fd, cb)
+  })
+}
+
+module.exports = { ensurePromiseCallback, destinationFile, validateDestinationFile }
