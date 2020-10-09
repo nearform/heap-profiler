@@ -142,6 +142,7 @@ t.test('it should run continuously', async t => {
   // Set preloader variables
   cleanEnvironment()
   process.env.HEAP_PROFILER_PROFILE_DESTINATION = profileDestination
+  process.env.HEAP_PROFILER_PROFILE_DURATION = 2
   process.env.HEAP_PROFILER_SNAPSHOT = 'false'
   process.env.HEAP_PROFILER_TIMELINE = 'false'
 
