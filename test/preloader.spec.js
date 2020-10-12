@@ -20,6 +20,7 @@ function cleanEnvironment() {
     'HEAP_PROFILER_SNAPSHOT_RUN_GC',
     'HEAP_PROFILER_DESTINATION',
     'HEAP_PROFILER_SNAPSHOT_DESTINATION',
+    'HEAP_PROFILER_PROFILE',
     'HEAP_PROFILER_PROFILE_DESTINATION',
     'HEAP_PROFILER_PROFILE_DURATION',
     'HEAP_PROFILER_PROFILE_INTERVAL',
@@ -53,7 +54,7 @@ t.test('it correctly generates reports when receiving USR2 and stop the second t
   process.env.HEAP_PROFILER_SNAPSHOT_DESTINATION = snapshotDestination
   process.env.HEAP_PROFILER_SNAPSHOT_RUN_GC = 'true'
   process.env.HEAP_PROFILER_PROFILE_DESTINATION = profileDestination
-  process.env.HEAP_PROFILER_PROFILE_DURATION = 10
+  process.env.HEAP_PROFILER_PROFILE_DURATION = 2
   process.env.HEAP_PROFILER_PROFILE_INTERVAL = 32768
   process.env.HEAP_PROFILER_TIMELINE_DESTINATION = timelineDestination
   process.env.HEAP_PROFILER_TIMELINE_RUN_GC = 'true'
@@ -122,12 +123,11 @@ t.test('it correctly exclude reports based on environment variables', async t =>
 })
 
 t.test('it should run continuously', async t => {
-  cleanEnvironment()
-
-  // Set preloader variables
   const snapshotDestination = await tmpName()
+  const profileDestination = await tmpName()
 
   // Set preloader variables
+  cleanEnvironment()
   process.env.HEAP_PROFILER_SNAPSHOT_DESTINATION = snapshotDestination
   process.env.HEAP_PROFILER_PROFILE = 'false'
   process.env.HEAP_PROFILER_TIMELINE = 'false'
@@ -139,14 +139,53 @@ t.test('it should run continuously', async t => {
   await waitForReport(logger.info, 3, 10)
   t.equal(logger.info.callCount, 3)
 
+  // Set preloader variables
+  cleanEnvironment()
+  process.env.HEAP_PROFILER_PROFILE_DESTINATION = profileDestination
+  process.env.HEAP_PROFILER_PROFILE_DURATION = 2
+  process.env.HEAP_PROFILER_SNAPSHOT = 'false'
+  process.env.HEAP_PROFILER_TIMELINE = 'false'
+
   // second snapshot
   process.kill(process.pid, 'SIGUSR2')
 
   // Wait for generators time to finish
-  await waitForReport(logger.info, 6, 10)
+  await waitForReport(logger.info, 3, 10)
 
   // Check the report was generated
-  t.equal(logger.info.callCount, 6)
+  t.equal(logger.info.callCount, 3)
+
+  try {
+    unlinkSync(snapshotDestination)
+    unlinkSync(profileDestination)
+  } catch (e) {
+    // No-op
+  }
+})
+
+t.test('it should run continuously even when all tools are disabled', async t => {
+  cleanEnvironment()
+
+  // Set preloader variables
+  process.env.HEAP_PROFILER_SNAPSHOT = 'false'
+  process.env.HEAP_PROFILER_PROFILE = 'false'
+  process.env.HEAP_PROFILER_TIMELINE = 'false'
+
+  // first snapshot
+  process.kill(process.pid, 'SIGUSR2')
+
+  // Wait for generators time to finish
+  await waitForReport(logger.info, 2, 10)
+  t.equal(logger.info.callCount, 2)
+
+  // second snapshot
+  process.kill(process.pid, 'SIGUSR2')
+
+  // Wait for generators time to finish
+  await waitForReport(logger.info, 4, 10)
+
+  // Check the report was generated
+  t.equal(logger.info.callCount, 4)
 })
 
 t.test('it correctly logs generation errors', async t => {
@@ -156,15 +195,15 @@ t.test('it correctly logs generation errors', async t => {
   process.env.HEAP_PROFILER_SNAPSHOT_DESTINATION = '/this/doesnt/exists-1'
   process.env.HEAP_PROFILER_PROFILE_DESTINATION = '/this/doesnt/exists-2'
   process.env.HEAP_PROFILER_TIMELINE_DESTINATION = '/this/doesnt/exists-3'
-  process.env.HEAP_PROFILER_PROFILE_DURATION = 10
+  process.env.HEAP_PROFILER_PROFILE_DURATION = 2
   process.env.HEAP_PROFILER_PROFILE_INTERVAL = 32768
 
   process.kill(process.pid, 'SIGUSR2')
 
   // Wait for generators time to finish
-  await waitForReport(logger.error, 1, 10)
+  await waitForReport(logger.error, 3, 2)
 
   // Check the reports were not generated
-  t.equal(logger.info.callCount, 2)
-  t.equal(logger.error.callCount, 1)
+  t.equal(logger.info.callCount, 3)
+  t.equal(logger.error.callCount, 3)
 })

@@ -4,18 +4,24 @@ const generateHeapSnapshot = require('./snapshot')
 const generateHeapSamplingProfile = require('./profile')
 const recordAllocationTimeline = require('./timeline')
 
-async function benchmarkGeneration(logger, type, report, options) {
+function benchmarkGeneration(logger, type, report, options, cb) {
   const start = process.hrtime.bigint()
-  const file = await report(options)
-  const end = Number(process.hrtime.bigint() - start)
 
-  logger.info(`[@nearform/heap-profiler]     Generated heap ${type} file ${file} in ${end / 1e6} ms`)
-  return file
+  report(options, (err, file) => {
+    if (err) {
+      logger.error(`[@nearform/heap-profiler]     Heap ${type} generation failed`, err)
+      return cb(err)
+    }
+
+    const end = Number(process.hrtime.bigint() - start)
+    logger.info(`[@nearform/heap-profiler]     Generated heap ${type} file ${file} in ${end / 1e6} ms`)
+    cb(file)
+  })
 }
 
 module.exports = function installPreloader(logger) {
   function runTools() {
-    logger.info('[@nearform/heap-profiler] Received SIGUSR2. Generating heap reports ...')
+    logger.info('[@nearform/heap-profiler] Received SIGUSR2. Starting tools ...')
 
     const takeSnapshot = process.env.HEAP_PROFILER_SNAPSHOT !== 'false'
     const takeProfile = process.env.HEAP_PROFILER_PROFILE !== 'false'
@@ -53,35 +59,51 @@ module.exports = function installPreloader(logger) {
       timelineOptions.runGC = process.env.HEAP_PROFILER_TIMELINE_RUN_GC === 'true'
     }
 
-    const promises = []
+    let toInvoke = takeSnapshot + takeProfile + recordTimeline
+
+    function onToolEnd() {
+      toInvoke--
+
+      if (toInvoke > 0) {
+        return
+      }
+
+      logger.info('[@nearform/heap-profiler] All tools have completed.')
+
+      // Resume awaiting on the next start signal
+      process.once('SIGUSR2', runTools)
+    }
+
+    if (toInvoke === 0) {
+      logger.info('[@nearform/heap-profiler] All tools were disabled.')
+
+      // Resume awaiting on the next start signal
+      process.once('SIGUSR2', runTools)
+
+      return
+    }
 
     if (takeSnapshot) {
-      promises.push(benchmarkGeneration(logger, 'snapshot', generateHeapSnapshot, snapshotOptions))
+      benchmarkGeneration(logger, 'snapshot', generateHeapSnapshot, snapshotOptions, onToolEnd)
     }
 
     if (takeProfile) {
-      promises.push(benchmarkGeneration(logger, 'sampling profile', generateHeapSamplingProfile, profilerOptions))
+      benchmarkGeneration(logger, 'sampling profile', generateHeapSamplingProfile, profilerOptions, onToolEnd)
     }
 
     if (recordTimeline) {
-      promises.push(benchmarkGeneration(logger, 'allocation timeline', async options => {
-        const stop = await recordAllocationTimeline(options)
-        logger.info('[@nearform/heap-profiler] Allocation timeline started. Awaiting SIGUSR2 to stop ...')
-        return new Promise((resolve, reject) => process.once('SIGUSR2', () => stop().then(resolve).catch(reject)))
-      }, timelineOptions))
+      benchmarkGeneration(
+        logger,
+        'allocation timeline',
+        (options, cb) => {
+          const stop = recordAllocationTimeline(options, cb)
+          logger.info('[@nearform/heap-profiler] Allocation timeline started. Awaiting SIGUSR2 to stop ...')
+          process.once('SIGUSR2', () => stop(cb))
+        },
+        timelineOptions,
+        onToolEnd
+      )
     }
-
-    Promise.all(promises)
-      .then(() => {
-        logger.info('[@nearform/heap-profiler] Generation completed.')
-        // resume awaiting on the next start signal
-        process.once('SIGUSR2', runTools)
-      })
-      .catch(e => {
-        logger.error('[@nearform/heap-profiler] Generation failed.', e)
-        // stops itslef
-        process.kill(process.pid, 'SIGUSR2')
-      })
   }
 
   process.once('SIGUSR2', runTools)

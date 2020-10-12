@@ -2,7 +2,7 @@
 
 const { Session } = require('inspector')
 const SonicBoom = require('sonic-boom')
-const { ensurePromiseCallback, destinationFile } = require('./utils')
+const { ensurePromiseCallback, destinationFile, validateDestinationFile } = require('./utils')
 
 module.exports = function generateHeapSnapshot(options, cb) {
   /* istanbul ignore if */
@@ -22,67 +22,67 @@ module.exports = function generateHeapSnapshot(options, cb) {
     throw new Error('The destination option must be a non empty string')
   }
 
-  const writer = new SonicBoom({ dest: destination })
-
-  writer.on('error', err => {
-    /* istanbul ignore if */
-    if (handled) {
-      return
+  validateDestinationFile(destination, err => {
+    if (err) {
+      return callback(err)
     }
 
-    handled = true
-    callback(err)
-  })
+    const writer = new SonicBoom({ dest: destination })
 
-  writer.on('close', () => {
-    /* istanbul ignore if */
-    if (handled) {
-      return
+    function onWriterEnd(err) {
+      /* istanbul ignore if */
+      if (handled) {
+        return
+      }
+
+      handled = true
+      session.disconnect()
+
+      callback(err || error, destination)
     }
 
-    handled = true
-    callback(error, destination)
-  })
+    writer.on('error', onWriterEnd)
+    writer.on('close', onWriterEnd)
 
-  if (runGC && typeof global.gc === 'function') {
-    try {
-      global.gc()
-    } catch (e) {
-      error = e
-      writer.end()
-      return promise
-    }
-  }
-
-  // Start the session
-  session.connect()
-
-  // Prepare chunk appending
-  session.on('HeapProfiler.addHeapSnapshotChunk', m => {
-    // A write failed, discard all the rest
-    /* istanbul ignore if */
-    if (error) {
-      return
+    if (runGC && typeof global.gc === 'function') {
+      try {
+        global.gc()
+      } catch (e) {
+        error = e
+        writer.end()
+        return promise
+      }
     }
 
-    try {
-      writer.write(m.params.chunk)
-    } catch (e) {
+    // Start the session
+    session.connect()
+
+    // Prepare chunk appending
+    session.on('HeapProfiler.addHeapSnapshotChunk', m => {
+      // A write failed, discard all the rest
+      /* istanbul ignore if */
+      if (error) {
+        return
+      }
+
+      try {
+        writer.write(m.params.chunk)
+      } catch (e) {
+        /* istanbul ignore next */
+        error = e
+      }
+    })
+
+    // Request heap snapshot
+    session.post('HeapProfiler.takeHeapSnapshot', null, (err, r) => {
       /* istanbul ignore next */
-      error = e
-    }
-  })
+      if (err && !error) {
+        error = err
+      }
 
-  // Request heap snapshot
-  session.post('HeapProfiler.takeHeapSnapshot', null, (err, r) => {
-    /* istanbul ignore next */
-    if (err && !error) {
-      error = err
-    }
-
-    // Cleanup
-    session.disconnect()
-    writer.end()
+      // Cleanup
+      writer.end()
+    })
   })
 
   return promise

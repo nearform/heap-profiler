@@ -2,7 +2,7 @@
 
 const { Session } = require('inspector')
 const { writeFile } = require('fs')
-const { ensurePromiseCallback, destinationFile } = require('./utils')
+const { ensurePromiseCallback, destinationFile, validateDestinationFile } = require('./utils')
 
 const defaultInterval = 32768
 const defaultDuration = 10000
@@ -34,34 +34,41 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
     throw new Error('The interval option must be a number greater than 0')
   }
 
-  // Start the session
-  session.connect()
-
-  // Request profile
-  session.post('HeapProfiler.startSampling', { samplingInterval: interval }, err => {
-    /* istanbul ignore if */
+  validateDestinationFile(destination, err => {
     if (err) {
       return callback(err)
     }
 
-    setTimeout(() => {
-      session.post('HeapProfiler.stopSampling', (err, profile) => {
-        /* istanbul ignore if */
-        if (err) {
-          return callback(err)
-        }
+    // Start the session
+    session.connect()
 
-        session.disconnect()
+    // Request profile
+    session.post('HeapProfiler.startSampling', { samplingInterval: interval }, err => {
+      /* istanbul ignore if */
+      if (err) {
+        return callback(err)
+      }
 
-        writeFile(destination, JSON.stringify(profile.profile), 'utf-8', err => {
+      setTimeout(() => {
+        session.post('HeapProfiler.stopSampling', (err, profile) => {
+          /* istanbul ignore if */
           if (err) {
             return callback(err)
           }
 
-          callback(null, destination)
+          session.disconnect()
+
+          writeFile(destination, JSON.stringify(profile.profile), 'utf-8', err => {
+            /* istanbul ignore if */
+            if (err) {
+              return callback(err)
+            }
+
+            callback(null, destination)
+          })
         })
-      })
-    }, duration)
+      }, duration)
+    })
   })
 
   return promise
