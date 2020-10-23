@@ -3,6 +3,8 @@
 const t = require('tap')
 const { readFileSync } = require('fs')
 const { file: tmpFile } = require('tmp-promise')
+const AbortController = require('abort-controller')
+const EventEmitter = require('events')
 
 const generateHeapSamplingProfile = require('../src/profile')
 const allocateMemoryFor = require('./allocator')
@@ -19,6 +21,55 @@ t.test('it correctly generates a profile using promises', async t => {
 
   cleanup()
 })
+
+t.test('abort controller', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+  const controller = new AbortController()
+
+  const start = Date.now()
+
+  setTimeout(function() {
+    controller.abort()
+  }, 100)
+
+  await Promise.race([generateHeapSamplingProfile({ destination, signal: controller.signal }), allocateMemoryFor(1000)])
+
+  const end = Date.now()
+
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.is(end - start < 1000, true)
+  t.is(end - start >= 100, true)
+
+  t.true(validate(generated))
+
+  cleanup()
+})
+
+t.test('abort with EventEmitter', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+  const controller = new EventEmitter()
+
+  const start = Date.now()
+
+  setTimeout(function() {
+    controller.emit('abort')
+  }, 100)
+
+  await Promise.race([generateHeapSamplingProfile({ destination, signal: controller }), allocateMemoryFor(1000)])
+
+  const end = Date.now()
+
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.is(end - start < 1000, true)
+  t.is(end - start >= 100, true)
+
+  t.true(validate(generated))
+
+  cleanup()
+})
+
 
 t.test('it correctly generates a profile using callbacks', async t => {
   const { path: destination, cleanup } = await tmpFile()
