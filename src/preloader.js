@@ -92,7 +92,7 @@ module.exports = function installPreloader(logger) {
       const controller = new AbortController()
       profilerOptions.signal = controller.signal
       const abort = controller.abort.bind(controller)
-      process.on('SIGUSR2', abort)
+      process.once('SIGUSR2', abort)
       // logger.info(`[@nearform/heap-profiler] Sampling profiler started. Awaiting ${profilerOptions.duration} ms or SIGUSR2 to stop ...`)
       benchmarkGeneration(logger, 'sampling profile', generateHeapSamplingProfile, profilerOptions, function (err) {
         process.removeListener('SIGUSR2', abort)
