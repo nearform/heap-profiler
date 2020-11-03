@@ -36,10 +36,14 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
   }
 
   if (signal) {
+    if (signal.aborted) {
+      callback(new Error('aborted'))
+      return
+    }
     if (signal.addEventListener) {
       signal.addEventListener('abort', finish)
     } else {
-      signal.on('abort', finish)
+      signal.once('abort', finish)
     }
   }
 
