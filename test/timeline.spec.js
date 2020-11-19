@@ -9,7 +9,7 @@ const recordAllocationTimeline = require('../src/timeline')
 const validate = require('./fixtures/snapshotSchema')
 const wait = require('util').promisify(setTimeout)
 const duration = 10
-const timeout = 5000
+const timeout = 10000
 
 t.test('it correctly generates a timeline using promises', { timeout }, async t => {
   const { path: destination, cleanup } = await tmpFile()
