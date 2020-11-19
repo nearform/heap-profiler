@@ -42,10 +42,11 @@
     "postpublish": "git push origin && git push origin -f --tags",
     "lint": "eslint src/**/*.js test/**/*.js",
     "test": "tap --gc --reporter=spec --coverage-report=html --coverage-report=text --no-browser test/*.spec.js",
-    "ci": "npm run lint && tap --gc --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 --timeout 45 test/*.spec.js"
+    "ci": "npm run lint && tap --gc --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 --timeout 180 test/*.spec.js"
   },
   "dependencies": {
-    "sonic-boom": "^1.0.1"
+    "sonic-boom": "^1.0.1",
+    "abort-controller": "^3.0.0"
   },
   "devDependencies": {
     "docker-namesgenerator": "0.0.1",

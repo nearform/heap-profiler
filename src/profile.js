@@ -15,12 +15,13 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
   }
 
   // Prepare the context
-  const { interval, duration, destination } = Object.assign(
+  const { interval, duration, destination, signal } = Object.assign(
     { interval: defaultInterval, duration: defaultDuration, destination: destinationFile('heapprofile') },
     options
   )
   const [callback, promise] = ensurePromiseCallback(cb)
   const session = new Session()
+  let timeout
 
   if (typeof destination !== 'string' || destination.length === 0) {
     throw new Error('The destination option must be a non empty string')
@@ -32,6 +33,39 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
 
   if (typeof interval !== 'number' || isNaN(interval) || interval < 0) {
     throw new Error('The interval option must be a number greater than 0')
+  }
+
+  if (signal) {
+    if (signal.aborted) {
+      callback(new Error('aborted'))
+      return
+    }
+    if (signal.addEventListener) {
+      signal.addEventListener('abort', finish)
+    } else {
+      signal.once('abort', finish)
+    }
+  }
+
+  function finish () {
+    clearTimeout(timeout)
+    session.post('HeapProfiler.stopSampling', (err, profile) => {
+      /* istanbul ignore if */
+      if (err) {
+        return callback(err)
+      }
+
+      session.disconnect()
+
+      writeFile(destination, JSON.stringify(profile.profile), 'utf-8', err => {
+        /* istanbul ignore if */
+        if (err) {
+          return callback(err)
+        }
+
+        callback(null, destination)
+      })
+    })
   }
 
   validateDestinationFile(destination, err => {
@@ -49,25 +83,7 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
         return callback(err)
       }
 
-      setTimeout(() => {
-        session.post('HeapProfiler.stopSampling', (err, profile) => {
-          /* istanbul ignore if */
-          if (err) {
-            return callback(err)
-          }
-
-          session.disconnect()
-
-          writeFile(destination, JSON.stringify(profile.profile), 'utf-8', err => {
-            /* istanbul ignore if */
-            if (err) {
-              return callback(err)
-            }
-
-            callback(null, destination)
-          })
-        })
-      }, duration)
+      timeout = setTimeout(finish, duration)
     })
   })
 

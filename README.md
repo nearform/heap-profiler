@@ -76,6 +76,7 @@ The available functions are:
   - `destination`: The path where to store the profile. The default will be a `.heapprofile` in the current directory.
   - `interval`: Sample interval, in bytes. Default is `32768` (32KB).
   - `duration`: Sample duration, in milliseconds. Default is `10000` (10 seconds).
+  - `signal`: the [AbortController](http://npm.im/abort-controller) `signal`.
 
 - `recordAllocationTimeline([options], [callback]): [function|Promise]`: Starts recording allocation on heap. The valid options are:
 
