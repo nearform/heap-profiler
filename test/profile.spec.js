@@ -22,7 +22,7 @@ t.test('it correctly generates a profile using promises', async t => {
   cleanup()
 })
 
-t.test('abort controller', async t => {
+t.test('it accepts abort controller', async t => {
   const { path: destination, cleanup } = await tmpFile()
   const controller = new AbortController()
 
@@ -46,7 +46,34 @@ t.test('abort controller', async t => {
   cleanup()
 })
 
-t.test('abort with EventEmitter', async t => {
+t.test('it ignores duration when using an abort controller', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+  const controller = new AbortController()
+
+  const start = Date.now()
+
+  setTimeout(function() {
+    controller.abort()
+  }, 200)
+
+  await Promise.race([
+    generateHeapSamplingProfile({ destination, signal: controller.signal, duration: 100 }),
+    allocateMemoryFor(1000)
+  ])
+
+  const end = Date.now()
+
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.is(end - start < 1000, true)
+  t.is(end - start >= 200, true)
+
+  t.true(validate(generated))
+
+  cleanup()
+})
+
+t.test('it accepts an EventEmitter as AbortController', async t => {
   const { path: destination, cleanup } = await tmpFile()
   const controller = new EventEmitter()
 
@@ -69,7 +96,6 @@ t.test('abort with EventEmitter', async t => {
 
   cleanup()
 })
-
 
 t.test('it correctly generates a profile using callbacks', async t => {
   const { path: destination, cleanup } = await tmpFile()
@@ -121,5 +147,16 @@ t.test('it validates the duration option', t => {
 t.test('it validates the interval option', t => {
   t.throws(() => generateHeapSamplingProfile({ interval: '' }), 'The interval option must be a number greater than 0')
   t.throws(() => generateHeapSamplingProfile({ interval: -1 }), 'The interval option must be a number greater than 0')
+  t.end()
+})
+
+t.test('it validates the signal option', t => {
+  const controller = new AbortController()
+  controller.abort()
+
+  t.throws(
+    () => generateHeapSamplingProfile({ signal: controller.signal }),
+    'The AbortController has already been aborted'
+  )
   t.end()
 })

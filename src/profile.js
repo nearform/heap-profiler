@@ -37,8 +37,7 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
 
   if (signal) {
     if (signal.aborted) {
-      callback(new Error('aborted'))
-      return
+      throw new Error('The AbortController has already been aborted')
     }
     if (signal.addEventListener) {
       signal.addEventListener('abort', finish)
@@ -47,7 +46,7 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
     }
   }
 
-  function finish () {
+  function finish() {
     clearTimeout(timeout)
     session.post('HeapProfiler.stopSampling', (err, profile) => {
       /* istanbul ignore if */
@@ -83,7 +82,9 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
         return callback(err)
       }
 
-      timeout = setTimeout(finish, duration)
+      if (!signal) {
+        timeout = setTimeout(finish, duration)
+      }
     })
   })
 

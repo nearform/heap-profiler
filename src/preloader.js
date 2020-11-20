@@ -48,10 +48,6 @@ module.exports = function installPreloader(logger) {
       profilerOptions.interval = parseInt(process.env.HEAP_PROFILER_PROFILE_INTERVAL, 10)
     }
 
-    if ('HEAP_PROFILER_PROFILE_DURATION' in process.env) {
-      profilerOptions.duration = parseInt(process.env.HEAP_PROFILER_PROFILE_DURATION, 10) || 10000 // 10s
-    }
-
     if ('HEAP_PROFILER_TIMELINE_DESTINATION' in process.env) {
       timelineOptions.destination = process.env.HEAP_PROFILER_TIMELINE_DESTINATION
     }
@@ -93,8 +89,9 @@ module.exports = function installPreloader(logger) {
       profilerOptions.signal = controller.signal
       const abort = controller.abort.bind(controller)
       process.once('SIGUSR2', abort)
-      // logger.info(`[@nearform/heap-profiler] Sampling profiler started. Awaiting ${profilerOptions.duration} ms or SIGUSR2 to stop ...`)
-      benchmarkGeneration(logger, 'sampling profile', generateHeapSamplingProfile, profilerOptions, function (err) {
+
+      logger.info('[@nearform/heap-profiler] Sampling profiler started. Awaiting SIGUSR2 to stop ...')
+      benchmarkGeneration(logger, 'sampling profile', generateHeapSamplingProfile, profilerOptions, function(err) {
         process.removeListener('SIGUSR2', abort)
         onToolEnd(err)
       })

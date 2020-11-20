@@ -30,8 +30,10 @@ Then you will be able make a snapshot, start profiling heap, and start tracking 
 kill -USR2 $PID
 ```
 
-Heap snapshot will be immediately available, heap profile will be done after the specified duration (10s by default).
-Allocation timeline must be stopped, by sending another SIGUSR2 signal to the process.
+Heap snapshot will be generated immediately.
+
+Heap sampling profiler and allocation timeline must be stopped, by sending another SIGUSR2 signal to the process.
+
 Then the tool will await on the next signal, to resume profiling/tracking/shooting the heap.
 
 The preloader uses the following environment variables to control its behavior:
@@ -47,8 +49,6 @@ The preloader uses the following environment variables to control its behavior:
 - `HEAP_PROFILER_PROFILE_DESTINATION`: The path where to store the profile. The default will be a `.heapprofile` in the current directory.
 
 - `HEAP_PROFILER_PROFILE_INTERVAL`: Heap sampling profile interval, in bytes. Default is `32768` (32KB).
-
-- `HEAP_PROFILER_PROFILE_DURATION`: Heap sampling profile in milliseconds. Default is `10000` (10 seconds).
 
 - `HEAP_PROFILER_TIMELINE`: If set to `false`, it will not start tracking timeline allocation.
 
@@ -75,7 +75,7 @@ The available functions are:
 
   - `destination`: The path where to store the profile. The default will be a `.heapprofile` in the current directory.
   - `interval`: Sample interval, in bytes. Default is `32768` (32KB).
-  - `duration`: Sample duration, in milliseconds. Default is `10000` (10 seconds).
+  - `duration`: Sample duration, in milliseconds. Default is `10000` (10 seconds), and it is ignored if `signal` is provided.
   - `signal`: the [AbortController](http://npm.im/abort-controller) `signal`.
 
 - `recordAllocationTimeline([options], [callback]): [function|Promise]`: Starts recording allocation on heap. The valid options are:
