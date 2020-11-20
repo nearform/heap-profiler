@@ -24,21 +24,26 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
   let timeout
 
   if (typeof destination !== 'string' || destination.length === 0) {
-    throw new Error('The destination option must be a non empty string')
+    callback(new Error('The destination option must be a non empty string'))
+    return
   }
 
   if (typeof duration !== 'number' || isNaN(duration) || duration < 0) {
-    throw new Error('The duration option must be a number greater than 0')
+    callback(new Error('The duration option must be a number greater than 0'))
+    return
   }
 
   if (typeof interval !== 'number' || isNaN(interval) || interval < 0) {
-    throw new Error('The interval option must be a number greater than 0')
+    callback(new Error('The interval option must be a number greater than 0'))
+    return
   }
 
   if (signal) {
     if (signal.aborted) {
-      throw new Error('The AbortController has already been aborted')
+      callback(new Error('The AbortController has already been aborted'))
+      return
     }
+
     if (signal.addEventListener) {
       signal.addEventListener('abort', finish)
     } else {

@@ -98,17 +98,16 @@ module.exports = function installPreloader(logger) {
     }
 
     if (recordTimeline) {
-      benchmarkGeneration(
-        logger,
-        'allocation timeline',
-        (options, cb) => {
-          const stop = recordAllocationTimeline(options, cb)
-          logger.info('[@nearform/heap-profiler] Allocation timeline started. Awaiting SIGUSR2 to stop ...')
-          process.once('SIGUSR2', () => stop(cb))
-        },
-        timelineOptions,
-        onToolEnd
-      )
+      const controller = new AbortController()
+      timelineOptions.signal = controller.signal
+      const abort = controller.abort.bind(controller)
+      process.once('SIGUSR2', abort)
+
+      logger.info('[@nearform/heap-profiler] Allocation timeline started. Awaiting SIGUSR2 to stop ...')
+      benchmarkGeneration(logger, 'allocation timeline', recordAllocationTimeline, timelineOptions, function(err) {
+        process.removeListener('SIGUSR2', abort)
+        onToolEnd(err)
+      })
     }
   }
 
