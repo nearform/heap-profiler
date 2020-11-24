@@ -24,22 +24,26 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
   let timeout
 
   if (typeof destination !== 'string' || destination.length === 0) {
-    throw new Error('The destination option must be a non empty string')
+    callback(new Error('The destination option must be a non empty string'))
+    return
   }
 
   if (typeof duration !== 'number' || isNaN(duration) || duration < 0) {
-    throw new Error('The duration option must be a number greater than 0')
+    callback(new Error('The duration option must be a number greater than 0'))
+    return
   }
 
   if (typeof interval !== 'number' || isNaN(interval) || interval < 0) {
-    throw new Error('The interval option must be a number greater than 0')
+    callback(new Error('The interval option must be a number greater than 0'))
+    return
   }
 
   if (signal) {
     if (signal.aborted) {
-      callback(new Error('aborted'))
+      callback(new Error('The AbortController has already been aborted'))
       return
     }
+
     if (signal.addEventListener) {
       signal.addEventListener('abort', finish)
     } else {
@@ -47,7 +51,7 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
     }
   }
 
-  function finish () {
+  function finish() {
     clearTimeout(timeout)
     session.post('HeapProfiler.stopSampling', (err, profile) => {
       /* istanbul ignore if */
@@ -83,7 +87,9 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
         return callback(err)
       }
 
-      timeout = setTimeout(finish, duration)
+      if (!signal) {
+        timeout = setTimeout(finish, duration)
+      }
     })
   })
 

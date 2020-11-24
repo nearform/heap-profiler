@@ -4,6 +4,8 @@ const { Session } = require('inspector')
 const SonicBoom = require('sonic-boom')
 const { ensurePromiseCallback, destinationFile, validateDestinationFile } = require('./utils')
 
+const defaultDuration = 10000
+
 module.exports = function recordAllocationTimeline(options, cb) {
   /* istanbul ignore if */
   if (typeof options === 'function') {
@@ -12,15 +14,40 @@ module.exports = function recordAllocationTimeline(options, cb) {
   }
 
   // Prepare the context
-  const [startCb, startPromise] = ensurePromiseCallback(cb)
-  const { destination, runGC } = Object.assign({ destination: destinationFile('heaptimeline'), runGC: true }, options)
+  const { destination, runGC, duration, signal } = Object.assign(
+    { destination: destinationFile('heaptimeline'), runGC: true, duration: defaultDuration },
+    options
+  )
+  const [callback, promise] = ensurePromiseCallback(cb)
   const session = new Session()
+  let timeout
 
   if (typeof destination !== 'string' || destination.length === 0) {
-    throw new Error('The destination option must be a non empty string')
+    callback(new Error('The destination option must be a non empty string'))
+    return
   }
 
-  function handleStop(stopCb) {
+  if (typeof duration !== 'number' || isNaN(duration) || duration < 0) {
+    callback(new Error('The duration option must be a number greater than 0'))
+    return
+  }
+
+  if (signal) {
+    if (signal.aborted) {
+      callback(new Error('The AbortController has already been aborted'))
+      return
+    }
+
+    if (signal.addEventListener) {
+      signal.addEventListener('abort', finish)
+    } else {
+      signal.once('abort', finish)
+    }
+  }
+
+  function finish() {
+    clearTimeout(timeout)
+
     // Trigger GC and start start tracking allocations on heap
     /* istanbul ignore else */
     if (runGC && typeof global.gc === 'function') {
@@ -28,7 +55,7 @@ module.exports = function recordAllocationTimeline(options, cb) {
         global.gc()
       } catch (e) {
         session.disconnect()
-        return stopCb(e)
+        return callback(e)
       }
     }
 
@@ -46,7 +73,7 @@ module.exports = function recordAllocationTimeline(options, cb) {
       handled = true
       session.disconnect()
 
-      stopCb(err || error, destination)
+      callback(err || error, destination)
     }
 
     writer.on('error', onWriterEnd)
@@ -81,7 +108,7 @@ module.exports = function recordAllocationTimeline(options, cb) {
 
   validateDestinationFile(destination, err => {
     if (err) {
-      return startCb(err)
+      return callback(err)
     }
 
     // Trigger GC and start start tracking allocations on heap
@@ -90,7 +117,7 @@ module.exports = function recordAllocationTimeline(options, cb) {
       try {
         global.gc()
       } catch (e) {
-        return startCb(e)
+        return callback(e)
       }
     }
 
@@ -100,22 +127,14 @@ module.exports = function recordAllocationTimeline(options, cb) {
     session.post('HeapProfiler.startTrackingHeapObjects', { trackAllocations: true }, err => {
       /* istanbul ignore if */
       if (err) {
-        return startCb(err)
+        return callback(err)
       }
 
-      if (startPromise) {
-        // When using promise-style, we need to wrap handleStop in a promise
-        startCb(null, function() {
-          return new Promise(function(resolve, reject) {
-            handleStop(err => {
-              err ? reject(err) : resolve()
-            })
-          })
-        })
+      if (!signal) {
+        timeout = setTimeout(finish, duration)
       }
     })
   })
 
-  // When using callback-style, startPromise will be undefined
-  return startPromise || handleStop
+  return promise
 }

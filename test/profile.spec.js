@@ -13,63 +13,17 @@ const validate = require('./fixtures/profileSchema')
 t.test('it correctly generates a profile using promises', async t => {
   const { path: destination, cleanup } = await tmpFile()
 
-  await Promise.all([generateHeapSamplingProfile({ destination, duration: 100 }), allocateMemoryFor(100)])
+  const samplingPromise = generateHeapSamplingProfile({ destination, duration: 100 })
+  await allocateMemoryFor(100)
+  await samplingPromise
 
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
   t.true(validate(generated))
+  t.strictSame(validate.errors, null)
 
   cleanup()
 })
-
-t.test('abort controller', async t => {
-  const { path: destination, cleanup } = await tmpFile()
-  const controller = new AbortController()
-
-  const start = Date.now()
-
-  setTimeout(function() {
-    controller.abort()
-  }, 100)
-
-  await Promise.race([generateHeapSamplingProfile({ destination, signal: controller.signal }), allocateMemoryFor(1000)])
-
-  const end = Date.now()
-
-  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
-
-  t.is(end - start < 1000, true)
-  t.is(end - start >= 100, true)
-
-  t.true(validate(generated))
-
-  cleanup()
-})
-
-t.test('abort with EventEmitter', async t => {
-  const { path: destination, cleanup } = await tmpFile()
-  const controller = new EventEmitter()
-
-  const start = Date.now()
-
-  setTimeout(function() {
-    controller.emit('abort')
-  }, 100)
-
-  await Promise.race([generateHeapSamplingProfile({ destination, signal: controller }), allocateMemoryFor(1000)])
-
-  const end = Date.now()
-
-  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
-
-  t.is(end - start < 1000, true)
-  t.is(end - start >= 100, true)
-
-  t.true(validate(generated))
-
-  cleanup()
-})
-
 
 t.test('it correctly generates a profile using callbacks', async t => {
   const { path: destination, cleanup } = await tmpFile()
@@ -81,6 +35,8 @@ t.test('it correctly generates a profile using callbacks', async t => {
         cleanup()
 
         t.true(validate(generated))
+        t.strictSame(validate.errors, null)
+
         resolve()
       } catch (e) {
         reject(e)
@@ -106,20 +62,123 @@ t.test('it handles file saving errors using callbacks', t => {
   })
 })
 
+t.test('it can use an AbortController', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+  const controller = new AbortController()
+
+  const start = Date.now()
+
+  setTimeout(function() {
+    controller.abort()
+  }, 100)
+
+  const samplingPromise = generateHeapSamplingProfile({ destination, signal: controller.signal })
+  await allocateMemoryFor(100)
+  await samplingPromise
+
+  const end = Date.now()
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.is(end - start < 1000, true)
+  t.is(end - start >= 100, true)
+
+  t.true(validate(generated))
+
+  cleanup()
+})
+
+t.test('it can use an EventEmitter as AbortController', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+  const controller = new EventEmitter()
+
+  const start = Date.now()
+
+  setTimeout(function() {
+    controller.emit('abort')
+  }, 100)
+
+  const samplingPromise = generateHeapSamplingProfile({ destination, signal: controller })
+  await allocateMemoryFor(100)
+  await samplingPromise
+
+  const end = Date.now()
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.is(end - start < 1000, true)
+  t.is(end - start >= 100, true)
+
+  t.true(validate(generated))
+
+  cleanup()
+})
+
+t.test('it ignores duration when using an AbortController', async t => {
+  const { path: destination, cleanup } = await tmpFile()
+  const controller = new AbortController()
+
+  const start = Date.now()
+
+  setTimeout(function() {
+    controller.abort()
+  }, 200)
+
+  const samplingPromise = generateHeapSamplingProfile({ destination, signal: controller.signal, duration: 100 })
+  await allocateMemoryFor(100)
+  await samplingPromise
+
+  const end = Date.now()
+  const generated = JSON.parse(readFileSync(destination, 'utf-8'))
+
+  t.is(end - start < 1000, true)
+  t.is(end - start >= 200, true)
+
+  t.true(validate(generated))
+
+  cleanup()
+})
+
 t.test('it validates the destination option', t => {
-  t.throws(() => generateHeapSamplingProfile({ destination: 1 }), 'The destination option must be a non empty string')
-  t.throws(() => generateHeapSamplingProfile({ destination: '' }), 'The destination option must be a non empty string')
-  t.end()
+  t.plan(2)
+
+  generateHeapSamplingProfile({ destination: '' }, err => {
+    t.is(err.message, 'The destination option must be a non empty string')
+  })
+
+  generateHeapSamplingProfile({ destination: -1 }, err => {
+    t.is(err.message, 'The destination option must be a non empty string')
+  })
 })
 
 t.test('it validates the duration option', t => {
-  t.throws(() => generateHeapSamplingProfile({ duration: '' }), 'The duration option must be a number greater than 0')
-  t.throws(() => generateHeapSamplingProfile({ duration: -1 }), 'The duration option must be a number greater than 0')
-  t.end()
+  t.plan(2)
+
+  generateHeapSamplingProfile({ duration: '' }, err => {
+    t.is(err.message, 'The duration option must be a number greater than 0')
+  })
+
+  generateHeapSamplingProfile({ duration: -1 }, err => {
+    t.is(err.message, 'The duration option must be a number greater than 0')
+  })
 })
 
 t.test('it validates the interval option', t => {
-  t.throws(() => generateHeapSamplingProfile({ interval: '' }), 'The interval option must be a number greater than 0')
-  t.throws(() => generateHeapSamplingProfile({ interval: -1 }), 'The interval option must be a number greater than 0')
-  t.end()
+  t.plan(2)
+
+  generateHeapSamplingProfile({ interval: '' }, err => {
+    t.is(err.message, 'The interval option must be a number greater than 0')
+  })
+
+  generateHeapSamplingProfile({ interval: -1 }, err => {
+    t.is(err.message, 'The interval option must be a number greater than 0')
+  })
+})
+
+t.test('it validates the signal option', t => {
+  const controller = new AbortController()
+  controller.abort()
+
+  generateHeapSamplingProfile({ signal: controller.signal }, err => {
+    t.is(err.message, 'The AbortController has already been aborted')
+    t.end()
+  })
 })
