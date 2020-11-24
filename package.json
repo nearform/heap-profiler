@@ -1,6 +1,6 @@
 {
   "name": "@nearform/heap-profiler",
-  "version": "0.8.0",
+  "version": "0.7.0",
   "description": "Heap dump, sample profiler and allocation timeline generator for Node.",
   "author": "NearForm Ltd",
   "homepage": "https://github.com/nearform/heap-profiler",
