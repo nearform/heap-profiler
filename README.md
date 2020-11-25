@@ -38,6 +38,8 @@ Then the tool will await on the next signal, to resume profiling/tracking/shooti
 
 The preloader uses the following environment variables to control its behavior:
 
+- `HEAP_PROFILER_PRELOADER_DISABLED`: If set to `true`, the preloader is not installed and you need to use the API to sample the process.
+
 - `HEAP_PROFILER_SNAPSHOT`: If set to `false`, it will not generate heap dump snapshots.
 
 - `HEAP_PROFILER_SNAPSHOT_DESTINATION`: The path where to store the snapshot. The default will be a `.heapsnapshot` in the current directory.
