@@ -1,6 +1,6 @@
 {
   "name": "@nearform/heap-profiler",
-  "version": "0.8.1",
+  "version": "2.0.0",
   "description": "Heap dump, sample profiler and allocation timeline generator for Node.",
   "author": "NearForm Ltd",
   "homepage": "https://github.com/nearform/heap-profiler",
@@ -16,6 +16,10 @@
     {
       "name": "Matteo Collina",
       "url": "https://github.com/mcollina"
+    },
+    {
+      "name": "James M Snell",
+      "url": "https://github.com/jasnell"
     }
   ],
   "license": "Apache-2.0",
@@ -66,6 +70,6 @@
     "tmp-promise": "^2.0.2"
   },
   "engines": {
-    "node": ">= 12.0.0"
+    "node": ">= 12.13.0"
   }
 }
