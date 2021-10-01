@@ -21,7 +21,7 @@ t.test('it correctly generates a timeline using promises', async t => {
 
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
   t.strictSame(validate.errors, null)
   cleanup()
 })
@@ -35,7 +35,7 @@ t.test('it correctly generates a timeline using callbacks', async t => {
         const generated = JSON.parse(readFileSync(destination, 'utf-8'))
         cleanup()
 
-        t.true(validate(generated))
+        t.ok(validate(generated))
         t.strictSame(validate.errors, null)
 
         resolve()
@@ -126,7 +126,7 @@ t.test('it can use an AbortController', async t => {
 
   const start = Date.now()
 
-  setTimeout(function() {
+  setTimeout(function () {
     controller.abort()
   }, 100)
 
@@ -137,10 +137,10 @@ t.test('it can use an AbortController', async t => {
   const end = Date.now()
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.is(end - start < 5000, true)
-  t.is(end - start >= 100, true)
+  t.equal(end - start < 5000, true)
+  t.equal(end - start >= 100, true)
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
 
   cleanup()
 })
@@ -151,7 +151,7 @@ t.test('it can use an EventEmitter as AbortController', async t => {
 
   const start = Date.now()
 
-  setTimeout(function() {
+  setTimeout(function () {
     controller.emit('abort')
   }, 100)
 
@@ -162,10 +162,10 @@ t.test('it can use an EventEmitter as AbortController', async t => {
   const end = Date.now()
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.is(end - start < 5000, true)
-  t.is(end - start >= 100, true)
+  t.equal(end - start < 5000, true)
+  t.equal(end - start >= 100, true)
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
 
   cleanup()
 })
@@ -176,7 +176,7 @@ t.test('it ignores duration when using an AbortController', async t => {
 
   const start = Date.now()
 
-  setTimeout(function() {
+  setTimeout(function () {
     controller.abort()
   }, 200)
 
@@ -187,10 +187,10 @@ t.test('it ignores duration when using an AbortController', async t => {
   const end = Date.now()
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.is(end - start < 5000, true)
-  t.is(end - start >= 200, true)
+  t.equal(end - start < 5000, true)
+  t.equal(end - start >= 200, true)
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
 
   cleanup()
 })
@@ -199,11 +199,11 @@ t.test('it validates the destination option', t => {
   t.plan(2)
 
   recordAllocationTimeline({ destination: '' }, err => {
-    t.is(err.message, 'The destination option must be a non empty string')
+    t.equal(err.message, 'The destination option must be a non empty string')
   })
 
   recordAllocationTimeline({ destination: -1 }, err => {
-    t.is(err.message, 'The destination option must be a non empty string')
+    t.equal(err.message, 'The destination option must be a non empty string')
   })
 })
 
@@ -211,11 +211,11 @@ t.test('it validates the duration option', t => {
   t.plan(2)
 
   recordAllocationTimeline({ duration: '' }, err => {
-    t.is(err.message, 'The duration option must be a number greater than 0')
+    t.equal(err.message, 'The duration option must be a number greater than 0')
   })
 
   recordAllocationTimeline({ duration: -1 }, err => {
-    t.is(err.message, 'The duration option must be a number greater than 0')
+    t.equal(err.message, 'The duration option must be a number greater than 0')
   })
 })
 
@@ -224,7 +224,7 @@ t.test('it validates the signal option', t => {
   controller.abort()
 
   recordAllocationTimeline({ signal: controller.signal }, err => {
-    t.is(err.message, 'The AbortController has already been aborted')
+    t.equal(err.message, 'The AbortController has already been aborted')
     t.end()
   })
 })
