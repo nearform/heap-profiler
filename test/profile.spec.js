@@ -19,7 +19,7 @@ t.test('it correctly generates a profile using promises', async t => {
 
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
   t.strictSame(validate.errors, null)
 
   cleanup()
@@ -34,7 +34,7 @@ t.test('it correctly generates a profile using callbacks', async t => {
         const generated = JSON.parse(readFileSync(destination, 'utf-8'))
         cleanup()
 
-        t.true(validate(generated))
+        t.ok(validate(generated))
         t.strictSame(validate.errors, null)
 
         resolve()
@@ -55,7 +55,7 @@ t.test('it handles file saving errors using promises', async t => {
   })
 })
 
-t.test('it handles file saving errors using callbacks', t => {
+t.test('it handles file saving errors using callbacks', (t) => {
   generateHeapSamplingProfile({ duration: 10, destination: '/this/doesnt/exists' }, err => {
     t.equal(err.message, "ENOENT: no such file or directory, open '/this/doesnt/exists'")
     t.end()
@@ -79,10 +79,10 @@ t.test('it can use an AbortController', async t => {
   const end = Date.now()
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.is(end - start < 1000, true)
-  t.is(end - start >= 100, true)
+  t.equal(end - start < 1000, true)
+  t.equal(end - start >= 100, true)
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
 
   cleanup()
 })
@@ -104,10 +104,10 @@ t.test('it can use an EventEmitter as AbortController', async t => {
   const end = Date.now()
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.is(end - start < 1000, true)
-  t.is(end - start >= 100, true)
+  t.equal(end - start < 1000, true)
+  t.equal(end - start >= 100, true)
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
 
   cleanup()
 })
@@ -129,10 +129,10 @@ t.test('it ignores duration when using an AbortController', async t => {
   const end = Date.now()
   const generated = JSON.parse(readFileSync(destination, 'utf-8'))
 
-  t.is(end - start < 1000, true)
-  t.is(end - start >= 200, true)
+  t.equal(end - start < 1000, true)
+  t.equal(end - start >= 200, true)
 
-  t.true(validate(generated))
+  t.ok(validate(generated))
 
   cleanup()
 })
@@ -141,11 +141,11 @@ t.test('it validates the destination option', t => {
   t.plan(2)
 
   generateHeapSamplingProfile({ destination: '' }, err => {
-    t.is(err.message, 'The destination option must be a non empty string')
+    t.equal(err.message, 'The destination option must be a non empty string')
   })
 
   generateHeapSamplingProfile({ destination: -1 }, err => {
-    t.is(err.message, 'The destination option must be a non empty string')
+    t.equal(err.message, 'The destination option must be a non empty string')
   })
 })
 
@@ -153,11 +153,11 @@ t.test('it validates the duration option', t => {
   t.plan(2)
 
   generateHeapSamplingProfile({ duration: '' }, err => {
-    t.is(err.message, 'The duration option must be a number greater than 0')
+    t.equal(err.message, 'The duration option must be a number greater than 0')
   })
 
   generateHeapSamplingProfile({ duration: -1 }, err => {
-    t.is(err.message, 'The duration option must be a number greater than 0')
+    t.equal(err.message, 'The duration option must be a number greater than 0')
   })
 })
 
@@ -165,11 +165,11 @@ t.test('it validates the interval option', t => {
   t.plan(2)
 
   generateHeapSamplingProfile({ interval: '' }, err => {
-    t.is(err.message, 'The interval option must be a number greater than 0')
+    t.equal(err.message, 'The interval option must be a number greater than 0')
   })
 
   generateHeapSamplingProfile({ interval: -1 }, err => {
-    t.is(err.message, 'The interval option must be a number greater than 0')
+    t.equal(err.message, 'The interval option must be a number greater than 0')
   })
 })
 
@@ -178,7 +178,7 @@ t.test('it validates the signal option', t => {
   controller.abort()
 
   generateHeapSamplingProfile({ signal: controller.signal }, err => {
-    t.is(err.message, 'The AbortController has already been aborted')
+    t.equal(err.message, 'The AbortController has already been aborted')
     t.end()
   })
 })

@@ -48,10 +48,9 @@ async function waitForReport(spy, calls, timeout) {
   }
 }
 
-t.beforeEach(done => {
+t.beforeEach(() => {
   cleanEnvironment()
   startPreloader()
-  done()
 })
 
 t.test('it correctly generates reports when receiving USR2 and stop the second time', async t => {
