@@ -53,7 +53,7 @@
     "ci": "npm run lint && tap --gc --no-color --reporter=spec --coverage-report=json --coverage-report=text --branches 90 --functions 90 --lines 90 --statements 90 --timeout 180 test/*.spec.js"
   },
   "dependencies": {
-    "sonic-boom": "^2.0.2",
+    "sonic-boom": "^3.0.0",
     "abort-controller": "^3.0.0"
   },
   "devDependencies": {
