@@ -65,7 +65,7 @@
     "eslint-plugin-promise": "^6.0.1",
     "prettier": "^3.0.0",
     "sinon": "^15.0.0",
-    "tap": "^16.0.0",
+    "tap": "^18.5.2",
     "tmp-promise": "^3.0.2"
   },
   "engines": {
