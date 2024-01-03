@@ -1,7 +1,7 @@
 'use strict'
 
 const { Session } = require('inspector')
-const { writeFile } = require('fs')
+const { writeFileSync } = require('fs')
 const { ensurePromiseCallback, destinationFile, validateDestinationFile } = require('./utils')
 
 const defaultInterval = 32768
@@ -61,14 +61,12 @@ module.exports = function generateHeapSamplingProfile(options, cb) {
 
       session.disconnect()
 
-      writeFile(destination, JSON.stringify(profile.profile), 'utf-8', err => {
-        /* istanbul ignore if */
-        if (err) {
-          return callback(err)
-        }
-
+      try {
+        writeFileSync(destination, JSON.stringify(profile.profile), 'utf-8')
         callback(null, destination)
-      })
+      } catch (err) {
+        callback(err)
+      }
     })
   }
 
